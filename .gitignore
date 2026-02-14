@@ -1,0 +1,16 @@
+venv/
+__pycache__/
+instance/
+database.db
+*.pyc
+.DS_Store
+*.log
+*.sqlite3
+*.env
+*.egg-info/
+dist/
+build/
+
+*.csv
+
+medical_text_classification_fake_dataset.csv

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="p-8">
+    <h2 class="text-2xl font-bold mb-6">Chat History</h2>
+
+    <div class="space-y-4">
+        {% for s in sessions %}
+            <div class="bg-gray-800 p-4 rounded">
+                <p>Session ID: {{ s.id }}</p>
+                <a href="/chat/{{ s.id }}"
+                   class="text-blue-400">Open Chat</a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <a href="/home" class="mt-6 block text-blue-400">Back to Home</a>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex h-screen">
+
+    <!-- Sidebar -->
+    <div class="w-64 bg-gray-800 p-4">
+        <h2 class="text-xl font-bold mb-4">MedInsight</h2>
+
+        <a href="{{ url_for('new_chat') }}"
+           class="block bg-green-600 p-2 rounded mb-4 text-center hover:bg-green-700">
+           + New Chat
+        </a>
+
+        <div class="space-y-2">
+            {% for s in sessions %}
+                <a href="/chat/{{ s.id }}"
+                   class="block p-2 rounded {% if s.id == current_session %}bg-blue-600{% else %}bg-gray-700{% endif %}">
+                   Chat {{ s.id }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <a href="/history" class="block mt-6 text-blue-400">View History</a>
+        <a href="/logout" class="block mt-2 text-red-400">Logout</a>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="flex-1 flex flex-col">
+
+        <div class="flex-1 overflow-y-auto p-6 space-y-4">
+            {% for msg in messages %}
+                {% if msg.role == "user" %}
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <p class="font-bold">You:</p>
+                        <p>{{ msg.content }}</p>
+                    </div>
+                {% else %}
+                    <div class="bg-blue-600 p-3 rounded-lg">
+                        <p class="font-bold">MedInsight:</p>
+                        <div id="typing" class="hidden">
+    <span class="animate-pulse">MedInsight is typing...</span>
+</div>
+
+                        <p>{{ msg.content }}</p>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <form method="POST" class="p-4 bg-gray-800 flex">
+            <input name="question"
+                   placeholder="Ask your medical question..."
+                   class="flex-1 p-2 rounded bg-gray-700 mr-2">
+            <button class="bg-blue-600 px-4 rounded hover:bg-blue-700">
+                Send
+            </button>
+        </form>
+
+    </div>
+</div>
+{% endblock %}
+
+
+<script>
+const chatContainer = document.querySelector(".overflow-y-auto");
+chatContainer.scrollTop = chatContainer.scrollHeight;
+</script>
