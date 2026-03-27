@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="p-8">
-    <h2 class="text-2xl font-bold mb-6">Chat History</h2>
 
-    <div class="space-y-4">
-        {% for s in sessions %}
-            <div class="bg-gray-800 p-4 rounded">
-                <p>Session ID: {{ s.id }}</p>
-                <a href="/chat/{{ s.id }}"
-                   class="text-blue-400">Open Chat</a>
-            </div>
-        {% endfor %}
+<div class="container mt-5">
+
+  <h3>Consultation History</h3>
+
+  {% for s in sessions %}
+    <div class="card p-3 mb-2">
+      <p><b>{{ s.title }}</b></p>
+      <p class="text-muted">{{ s.created_at }}</p>
+      <a href="/chat/{{ s.id }}" class="btn btn-sm btn-primary">Open</a>
     </div>
+  {% endfor %}
 
-    <a href="/home" class="mt-6 block text-blue-400">Back to Home</a>
 </div>
+
 {% endblock %}

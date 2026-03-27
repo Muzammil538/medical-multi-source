@@ -1,28 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>MedInsight AI</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>MedInsight</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
   <style>
     body {
-      background: radial-gradient(circle at top, #1a1a2e, #0f0f1a);
+      background-color: #f8fafc;
+      font-family: 'Segoe UI', sans-serif;
     }
 
-    .glass {
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(15px);
-      border: 1px solid rgba(255,255,255,0.1);
+    .card {
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     }
 
-    .neon-border {
-      border: 1px solid rgba(255, 0, 120, 0.6);
-      box-shadow: 0 0 20px rgba(255, 0, 120, 0.4);
+    .btn-primary {
+      background-color: #0ea5e9;
+      border: none;
+    }
+
+    .sidebar {
+      height: 100vh;
+      background: white;
+      border-right: 1px solid #eee;
+    }
+
+    .chat-box {
+      height: 70vh;
+      overflow-y: auto;
+    }
+
+    .ai-card {
+      background: #ecfeff;
+      border-left: 5px solid #14b8a6;
     }
   </style>
 </head>
 
-<body class="text-white">
+<body>
   {% block content %}{% endblock %}
 </body>
 </html>

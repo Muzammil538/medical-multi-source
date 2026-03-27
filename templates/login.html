@@ -1,26 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="flex items-center justify-center h-screen">
-  <form method="POST" class="glass neon-border p-10 rounded-2xl w-96">
+<div class="container d-flex align-items-center justify-content-center vh-100">
 
-    <h2 class="text-3xl font-bold text-center mb-6">MedInsight AI</h2>
+  <div class="row w-100">
 
-    <input name="username" placeholder="Username"
-      class="w-full p-3 mb-4 rounded bg-black/40">
+    <!-- LEFT ILLUSTRATION -->
+    <div class="col-md-6 d-none d-md-flex align-items-center">
+      <img src="https://cdn-icons-png.flaticon.com/512/3774/3774299.png" class="img-fluid">
+    </div>
 
-    <input type="password" name="password" placeholder="Password"
-      class="w-full p-3 mb-4 rounded bg-black/40">
+    <!-- FORM -->
+    <div class="col-md-6">
+      <div class="card p-5">
 
-    <button class="w-full bg-pink-600 p-3 rounded-lg hover:bg-pink-700">
-      Login
-    </button>
+        <h2 class="text-center mb-3 text-primary">
+          <i class="bi bi-heart-pulse"></i> MedInsight
+        </h2>
 
-    <p class="text-center mt-4">
-      <a href="/register" class="text-pink-400">Create account</a>
-    </p>
+        <form method="POST">
+          <input name="username" class="form-control mb-3" placeholder="Username">
+          <input type="password" name="password" class="form-control mb-3" placeholder="Password">
 
-  </form>
+          <button class="btn btn-primary w-100">Login</button>
+        </form>
+
+        <p class="text-center mt-3">
+          <a href="/register">Create Account</a>
+        </p>
+
+      </div>
+    </div>
+
+  </div>
 </div>
 
 {% endblock %}
