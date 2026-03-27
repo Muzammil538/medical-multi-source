@@ -1,10 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MedInsight</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <title>MedInsight AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      background: radial-gradient(circle at top, #1a1a2e, #0f0f1a);
+    }
+
+    .glass {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .neon-border {
+      border: 1px solid rgba(255, 0, 120, 0.6);
+      box-shadow: 0 0 20px rgba(255, 0, 120, 0.4);
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-    {% block content %}{% endblock %}
+
+<body class="text-white">
+  {% block content %}{% endblock %}
 </body>
 </html>

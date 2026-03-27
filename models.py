@@ -6,21 +6,21 @@ db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    username = db.Column(db.String(100), unique=True)
+    password = db.Column(db.String(200))
     age = db.Column(db.Integer)
     gender = db.Column(db.String(20))
     medical_condition = db.Column(db.String(200))
 
 class ChatSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer)
+    title = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Integer, db.ForeignKey('chat_session.id'))
-    role = db.Column(db.String(20))  # "user" or "assistant"
+    session_id = db.Column(db.Integer)
+    role = db.Column(db.String(20))
     content = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-

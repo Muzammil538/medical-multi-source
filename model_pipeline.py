@@ -1,57 +1,92 @@
+import os
+import numpy as np
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import faiss
+from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
 import requests
-import json
 
-# ==========================
-# LOAD DATASETS
-# ==========================
+load_dotenv()
 
-train_df = pd.read_csv("train.csv")
-val_df = pd.read_csv("validation.csv")
-
-qa_df = pd.concat([train_df, val_df], ignore_index=True)
-qa_df = qa_df.sample(min(500, len(qa_df)), random_state=42)
-
-def convert_mcq(row):
-    options = [row['opa'], row['opb'], row['opc'], row['opd']]
-    correct = options[int(row['cop'])]
-    return f"Question: {row['question']} Answer: {correct}"
-
-qa_texts = qa_df.apply(convert_mcq, axis=1).tolist()
-
-research_df = pd.read_csv("medical_text_classification_fake_dataset.csv")
-research_df = research_df.sample(min(300, len(research_df)), random_state=42)
-
-research_texts = research_df["text"].dropna().tolist()
-
-all_documents = qa_texts + research_texts
-
-print("Total knowledge entries loaded:", len(all_documents))
-
-# ==========================
-# SIMPLE TF-IDF RETRIEVAL
-# ==========================
-
-vectorizer = TfidfVectorizer(stop_words='english')
-doc_vectors = vectorizer.fit_transform(all_documents)
-
-def retrieve_context(query, top_k=3):
-    query_vec = vectorizer.transform([query])
-    similarities = cosine_similarity(query_vec, doc_vectors)
-    top_indices = similarities[0].argsort()[-top_k:][::-1]
-    return [all_documents[i] for i in top_indices]
-
-# ==========================
-# OPENROUTER LLM
-# ==========================
-
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL_NAME = "arcee-ai/trinity-large-preview:free"
 
-def call_llm(prompt):
+# Load embedding model
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
+# =========================
+# LOAD DATA
+# =========================
+
+def load_data():
+    clinical = pd.read_csv("synthetic_clinical_dataset.csv")
+    research = pd.read_csv("medical_text_classification_fake_dataset.csv")
+    qa = pd.read_csv("train.csv")
+    return clinical, research, qa
+
+clinical_df, research_df, qa_df = load_data()
+
+# =========================
+# TEXT CONVERSION
+# =========================
+
+def clinical_text(row):
+    return f"Clinical: Age {row['Age']}, Condition {row['Medical_Condition']}, Test {row['Test_Results']}"
+
+def research_text(row):
+    return f"Research: {row['text']}"
+
+def qa_text(row):
+    options = [row['opa'], row['opb'], row['opc'], row['opd']]
+    return f"Q: {row['question']} A: {options[int(row['cop'])]}"
+
+clinical_docs = clinical_df.apply(clinical_text, axis=1).tolist()
+research_docs = research_df.apply(research_text, axis=1).tolist()
+qa_docs = qa_df.apply(qa_text, axis=1).tolist()
+
+# =========================
+# BUILD FAISS
+# =========================
+
+def build_index(docs):
+    emb = embedding_model.encode(docs)
+    index = faiss.IndexFlatL2(emb.shape[1])
+    index.add(np.array(emb))
+    return index
+
+clinical_index = build_index(clinical_docs)
+research_index = build_index(research_docs)
+qa_index = build_index(qa_docs)
+
+# =========================
+# RETRIEVE
+# =========================
+
+def retrieve(query, top_k=2):
+    q_emb = embedding_model.encode([query])
+
+    def search(index, docs):
+        D, I = index.search(q_emb, top_k)
+        results = []
+        for dist, idx in zip(D[0], I[0]):
+            score = float(1 / (1 + dist))
+            results.append({
+                "text": docs[idx],
+                "score": round(score, 3)
+            })
+        return results
+
+    return {
+        "clinical": search(clinical_index, clinical_docs),
+        "research": search(research_index, research_docs),
+        "qa": search(qa_index, qa_docs)
+    }
+
+# =========================
+# LLM
+# =========================
+
+def call_llm(prompt):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json"
@@ -60,35 +95,39 @@ def call_llm(prompt):
     data = {
         "model": MODEL_NAME,
         "messages": [
-            {"role": "system", "content": "You are a medical assistant."},
+            {"role": "system", "content": "Provide structured medical guidance."},
             {"role": "user", "content": prompt}
-        ]
+        ],
+        "temperature": 0.3
     }
 
-    response = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers=headers,
-        json=data
-    )
+    res = requests.post("https://openrouter.ai/api/v1/chat/completions",
+                        headers=headers, json=data)
 
-    # print("Status Code:", response.status_code)
-    # print("Response:", response.text)
-
-    result = response.json()
-
-    if response.status_code == 200 and "choices" in result:
+    result = res.json()
+    if "choices" in result:
         return result["choices"][0]["message"]["content"]
-    else:
-        return f"API Error: {result}"
+    return "LLM error"
 
-
-# ==========================
-# MAIN FUNCTION
-# ==========================
+# =========================
+# MAIN
+# =========================
 
 def process_query(user_profile, question):
 
-    context = retrieve_context(question)
+    retrieved = retrieve(question)
+
+    context = ""
+    sources = []
+
+    for source_type, items in retrieved.items():
+        for item in items:
+            context += item["text"] + "\n"
+            sources.append({
+                "type": source_type,
+                "score": item["score"],
+                "text": item["text"]
+            })
 
     prompt = f"""
 Patient:
@@ -96,15 +135,36 @@ Age: {user_profile.get('age')}
 Gender: {user_profile.get('gender')}
 Condition: {user_profile.get('medical_condition')}
 
-Medical Context:
-{' '.join(context)}
+Context:
+{context}
 
 Question:
 {question}
 
-Provide medical guidance without diagnosis.
+Respond strictly in this format:
+
+Symptoms:
+- ...
+
+Precautions:
+- ...
+
+Steps:
+1. ...
+2. ...
+
+Reasoning:
+Explain briefly how the answer is derived from context.
 """
 
     answer = call_llm(prompt)
 
-    return answer, context
+    # 🔥 SIMPLE EVALUATION METRICS
+    avg_score = round(sum([s["score"] for s in sources]) / len(sources), 2)
+
+    evaluation = {
+        "confidence": avg_score,
+        "num_sources": len(sources)
+    }
+
+    return answer, sources, evaluation

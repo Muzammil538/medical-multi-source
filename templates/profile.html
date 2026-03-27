@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex justify-center items-center h-screen">
+  <form method="POST" class="glass p-8 rounded-xl w-96">
+
+    <h2 class="text-xl mb-4">Profile</h2>
+
+    <input name="age" value="{{ current_user.age }}" class="w-full mb-3 p-2 bg-black/40 rounded">
+    <input name="gender" value="{{ current_user.gender }}" class="w-full mb-3 p-2 bg-black/40 rounded">
+    <input name="medical_condition" value="{{ current_user.medical_condition }}" class="w-full mb-3 p-2 bg-black/40 rounded">
+
+    <button class="bg-blue-600 w-full p-2 rounded">Save</button>
+
+  </form>
+</div>
+
+{% endblock %}
