@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import inspect, text
 from models import db, User, ChatSession, ChatMessage
 from model_pipeline import process_query
 from dotenv import load_dotenv
@@ -19,7 +20,7 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 # ---------------- AUTH ----------------
 
@@ -68,7 +69,10 @@ def new_chat():
 @app.route('/chat/<int:session_id>', methods=['GET','POST'])
 @login_required
 def chat(session_id):
-    session = ChatSession.query.get(session_id)
+    session = db.session.get(ChatSession, session_id)
+
+    sources = []
+    evaluation = {}
 
     if request.method == 'POST':
         question = request.form['question']
@@ -87,17 +91,20 @@ def chat(session_id):
         db.session.add(ChatMessage(session_id=session_id, role="user", content=question))
         db.session.add(ChatMessage(session_id=session_id, role="assistant", content=answer))
         db.session.commit()
+    else:
+        answer = None
 
     messages = ChatMessage.query.filter_by(session_id=session_id).all()
     sessions = ChatSession.query.filter_by(user_id=current_user.id).all()
 
     return render_template("chat.html",
                            messages=messages,
-    sessions=sessions,
-    current_session=session_id,
-    sources=sources,
-    evaluation=evaluation,
-    user=current_user if 'sources' in locals() else [])
+                           sessions=sessions,
+                           current_session=session_id,
+                           sources=sources,
+                           evaluation=evaluation,
+                           answer=answer,
+                           user=current_user)
 
 # ---------------- PROFILE ----------------
 
@@ -118,7 +125,16 @@ def logout():
 
 # ---------------- RUN ----------------
 
+def ensure_db_schema():
+    inspector = inspect(db.engine)
+    if "chat_session" in inspector.get_table_names():
+        columns = [col["name"] for col in inspector.get_columns("chat_session")]
+        if "title" not in columns:
+            db.session.execute(text("ALTER TABLE chat_session ADD COLUMN title VARCHAR(200)"))
+            db.session.commit()
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        ensure_db_schema()
     app.run(debug=False, use_reloader=False)

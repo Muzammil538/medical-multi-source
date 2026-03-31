@@ -11,27 +11,46 @@ load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL_NAME = "arcee-ai/trinity-large-preview:free"
 
-# Load embedding model
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+# Load embedding model lazily to avoid import-time issues.
+_embedding_model = None
+
+def get_embedding_model():
+    global _embedding_model
+    if _embedding_model is None:
+        _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    return _embedding_model
 
 # =========================
-# LOAD DATA
+# CACHE AND DATA
 # =========================
+
+_clinical_df = None
+_research_df = None
+_qa_df = None
+_clinical_docs = None
+_research_docs = None
+_qa_docs = None
+_clinical_index = None
+_research_index = None
+_qa_index = None
 
 def load_data():
-    clinical = pd.read_csv("synthetic_clinical_dataset.csv")
+    clinical = pd.read_csv("healthcare_dataset.csv")
     research = pd.read_csv("medical_text_classification_fake_dataset.csv")
     qa = pd.read_csv("train.csv")
     return clinical, research, qa
-
-clinical_df, research_df, qa_df = load_data()
 
 # =========================
 # TEXT CONVERSION
 # =========================
 
 def clinical_text(row):
-    return f"Clinical: Age {row['Age']}, Condition {row['Medical_Condition']}, Test {row['Test_Results']}"
+    return (
+        f"Clinical: Name {row.get('Name', 'N/A')}, Age {row.get('Age', 'N/A')}, "
+        f"Gender {row.get('Gender', 'N/A')}, Blood Type {row.get('Blood Type', 'N/A')}, "
+        f"Medical Condition {row.get('Medical Condition', 'N/A')}, "
+        f"Test Results {row.get('Test Results', 'N/A')}"
+    )
 
 def research_text(row):
     return f"Research: {row['text']}"
@@ -40,30 +59,46 @@ def qa_text(row):
     options = [row['opa'], row['opb'], row['opc'], row['opd']]
     return f"Q: {row['question']} A: {options[int(row['cop'])]}"
 
-clinical_docs = clinical_df.apply(clinical_text, axis=1).tolist()
-research_docs = research_df.apply(research_text, axis=1).tolist()
-qa_docs = qa_df.apply(qa_text, axis=1).tolist()
+# =========================
+# INITIALIZATION
+# =========================
+
+def initialize():
+    global _clinical_df, _research_df, _qa_df
+    global _clinical_docs, _research_docs, _qa_docs
+    global _clinical_index, _research_index, _qa_index
+
+    if _clinical_index is not None:
+        return
+
+    _clinical_df, _research_df, _qa_df = load_data()
+    _clinical_docs = _clinical_df.apply(clinical_text, axis=1).tolist()
+    _research_docs = _research_df.apply(research_text, axis=1).tolist()
+    _qa_docs = _qa_df.apply(qa_text, axis=1).tolist()
+
+    _clinical_index = build_index(_clinical_docs)
+    _research_index = build_index(_research_docs)
+    _qa_index = build_index(_qa_docs)
 
 # =========================
 # BUILD FAISS
 # =========================
 
 def build_index(docs):
-    emb = embedding_model.encode(docs)
+    emb = get_embedding_model().encode(docs, show_progress_bar=False)
     index = faiss.IndexFlatL2(emb.shape[1])
     index.add(np.array(emb))
     return index
 
-clinical_index = build_index(clinical_docs)
-research_index = build_index(research_docs)
-qa_index = build_index(qa_docs)
+# Initialize lazily only when the first query runs.
 
 # =========================
 # RETRIEVE
 # =========================
 
 def retrieve(query, top_k=2):
-    q_emb = embedding_model.encode([query])
+    initialize()
+    q_emb = get_embedding_model().encode([query])
 
     def search(index, docs):
         D, I = index.search(q_emb, top_k)
@@ -77,10 +112,11 @@ def retrieve(query, top_k=2):
         return results
 
     return {
-        "clinical": search(clinical_index, clinical_docs),
-        "research": search(research_index, research_docs),
-        "qa": search(qa_index, qa_docs)
+        "clinical": search(_clinical_index, _clinical_docs),
+        "research": search(_research_index, _research_docs),
+        "qa": search(_qa_index, _qa_docs)
     }
+
 
 # =========================
 # LLM
