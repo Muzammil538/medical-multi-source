@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5" style="max-width: 600px;">
+
+  <div class="card shadow-sm border-0 p-5 rounded-4">
+    <div class="d-flex align-items-center mb-4 text-primary">
+      <i class="bi bi-gear-fill fs-2 me-3"></i>
+      <h3 class="mb-0 fw-bold">Application Settings</h3>
+    </div>
+
+    <form method="POST">
+      
+      <div class="mb-2">
+        <label class="form-label fw-bold text-dark mb-1">Custom Fallback LLM Model</label>
+        <p class="text-muted small mb-3">
+          If the primary API model fails to generate a response, MedInsight will automatically cascade your prompt to this specified model. 
+          Use standard OpenRouter syntax (e.g., <code>openai/gpt-4o-mini</code> or <code>anthropic/claude-3-haiku</code>).
+        </p>
+        <input name="fallback_model" type="text" class="form-control form-control-lg bg-light border-0 shadow-sm" 
+               placeholder="e.g. google/gemini-flash-1.5" 
+               value="{{ current_user.fallback_model or '' }}">
+      </div>
+
+      <hr class="text-secondary opacity-25 my-4">
+
+      <button type="submit" class="btn btn-primary w-100 btn-lg rounded-pill shadow-sm">Save Preferences</button>
+
+    </form>
+    
+  </div>
+
+</div>
+
+{% endblock %}

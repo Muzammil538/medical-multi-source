@@ -1,20 +1,67 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container d-flex justify-content-center align-items-center vh-100">
-  <div class="card p-4 w-50">
+<div class="container d-flex align-items-center justify-content-center py-5" style="min-height: 80vh;">
+  <div class="row w-100 align-items-center shadow-lg bg-white rounded-5 overflow-hidden" style="max-width: 900px;">
+    
+    <!-- LEFT ILLUSTRATION -->
+    <div class="col-md-5 d-none d-md-flex flex-column align-items-center justify-content-center p-5 h-100" style="background: linear-gradient(135deg, #14b8a6, #0ea5e9);">
+      <div class="text-white text-center">
+        <i class="bi bi-shield-plus mb-3" style="font-size: 5rem;"></i>
+        <h2 class="fw-bold mb-3">Join MedInsight</h2>
+        <p class="opacity-75">Register today and access advanced AI medical insights tailored to your health profile.</p>
+      </div>
+    </div>
 
-    <h3 class="text-center text-primary">Create Account</h3>
+    <!-- FORM -->
+    <div class="col-md-7 p-5">
+      <div class="text-center mb-4">
+        <h3 class="fw-bold" style="color: #14b8a6;">
+          Create an Account
+        </h3>
+        <p class="text-muted">Fill in your details to help us personalize your experience</p>
+      </div>
 
-    <form method="POST">
-      <input name="username" class="form-control mb-2" placeholder="Username">
-      <input type="password" name="password" class="form-control mb-2" placeholder="Password">
-      <input name="age" class="form-control mb-2" placeholder="Age">
-      <input name="gender" class="form-control mb-2" placeholder="Gender">
-      <input name="medical_condition" class="form-control mb-3" placeholder="Condition">
+      <form method="POST">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted small fw-bold">USERNAME</label>
+            <input name="username" class="form-control bg-light border-0" placeholder="e.g. john_doe" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted small fw-bold">PASSWORD</label>
+            <input type="password" name="password" class="form-control bg-light border-0" placeholder="••••••••" required>
+          </div>
+        </div>
 
-      <button class="btn btn-success w-100">Register</button>
-    </form>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted small fw-bold">AGE</label>
+            <input type="number" name="age" class="form-control bg-light border-0" placeholder="e.g. 34">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label text-muted small fw-bold">GENDER</label>
+            <select name="gender" class="form-control bg-light border-0">
+              <option value="" disabled selected>Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label text-muted small fw-bold">MEDICAL CONDITION (Optional)</label>
+          <input name="medical_condition" class="form-control bg-light border-0" placeholder="e.g. Hypertension, Asthma...">
+        </div>
+
+        <button class="btn btn-primary btn-lg w-100 rounded-pill mb-3 shadow-sm" style="background: linear-gradient(135deg, #14b8a6, #0ea5e9);">Register Account</button>
+      </form>
+
+      <p class="text-center text-muted mb-0">
+        Already have an account? <a href="/" class="fw-bold text-decoration-none" style="color: #0ea5e9;">Sign In</a>
+      </p>
+    </div>
 
   </div>
 </div>

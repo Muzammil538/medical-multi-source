@@ -11,6 +11,7 @@ class User(UserMixin, db.Model):
     age = db.Column(db.Integer)
     gender = db.Column(db.String(20))
     medical_condition = db.Column(db.String(200))
+    fallback_model = db.Column(db.String(100), default='')
 
 class ChatSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)

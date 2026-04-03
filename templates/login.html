@@ -1,35 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container d-flex align-items-center justify-content-center vh-100">
-
-  <div class="row w-100">
-
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+  <div class="row w-100 align-items-center shadow-lg bg-white rounded-5 overflow-hidden" style="max-width: 900px;">
+    
     <!-- LEFT ILLUSTRATION -->
-    <div class="col-md-6 d-none d-md-flex align-items-center">
-      <img src="https://cdn-icons-png.flaticon.com/512/3774/3774299.png" class="img-fluid">
+    <div class="col-md-6 d-none d-md-flex align-items-center justify-content-center p-5" style="background: linear-gradient(135deg, #0ea5e9, #14b8a6);">
+      <div class="text-white text-center">
+        <i class="bi bi-bandaid mb-3" style="font-size: 5rem;"></i>
+        <h2 class="fw-bold mb-3">Welcome to MedInsight</h2>
+        <p class="opacity-75">Your personal AI-powered medical assistant leveraging clinical and research intelligence.</p>
+      </div>
     </div>
 
     <!-- FORM -->
-    <div class="col-md-6">
-      <div class="card p-5">
-
-        <h2 class="text-center mb-3 text-primary">
-          <i class="bi bi-heart-pulse"></i> MedInsight
-        </h2>
-
-        <form method="POST">
-          <input name="username" class="form-control mb-3" placeholder="Username">
-          <input type="password" name="password" class="form-control mb-3" placeholder="Password">
-
-          <button class="btn btn-primary w-100">Login</button>
-        </form>
-
-        <p class="text-center mt-3">
-          <a href="/register">Create Account</a>
-        </p>
-
+    <div class="col-md-6 p-5">
+      <div class="text-center mb-4">
+        <h3 class="fw-bold" style="color: #0ea5e9;">
+          <i class="bi bi-heart-pulse"></i> Sign In
+        </h3>
+        <p class="text-muted">Enter your credentials to access your dashboard</p>
       </div>
+
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-bold">USERNAME</label>
+          <input name="username" class="form-control form-control-lg bg-light border-0" placeholder="e.g. john_doe" required>
+        </div>
+        <div class="mb-4">
+          <label class="form-label text-muted small fw-bold">PASSWORD</label>
+          <input type="password" name="password" class="form-control form-control-lg bg-light border-0" placeholder="••••••••" required>
+        </div>
+
+        <button class="btn btn-primary btn-lg w-100 rounded-pill mb-3 shadow-sm">Login to MedInsight</button>
+      </form>
+
+      <p class="text-center text-muted mb-0">
+        New here? <a href="/register" class="fw-bold text-decoration-none" style="color: #14b8a6;">Create an Account</a>
+      </p>
     </div>
 
   </div>

@@ -1,18 +1,82 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-5">
+<div class="container mt-5" style="max-width: 900px;">
 
-  <h3>Consultation History</h3>
-
-  {% for s in sessions %}
-    <div class="card p-3 mb-2">
-      <p><b>{{ s.title }}</b></p>
-      <p class="text-muted">{{ s.created_at }}</p>
-      <a href="/chat/{{ s.id }}" class="btn btn-sm btn-primary">Open</a>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-clock-history text-primary"></i> Consultation History</h3>
+      <p class="text-muted">Review your past AI medical analysis sessions.</p>
     </div>
-  {% endfor %}
+    <a href="/new_chat" class="btn btn-primary rounded-pill shadow-sm"><i class="bi bi-plus-lg"></i> New Session</a>
+  </div>
+
+  <div class="row g-3">
+    {% for s in sessions %}
+      <div class="col-12">
+        <div class="card shadow-sm border-0 p-3 card-hover">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-1 text-dark fw-bold">{{ s.title or "New Consultation..." }}</h5>
+              <div class="text-muted small d-flex align-items-center gap-2">
+                <i class="bi bi-calendar-event"></i> 
+                {{ s.created_at.strftime('%b %d, %Y - %H:%M') if s.created_at else '' }}
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <a href="/chat/{{ s.id }}" class="btn btn-outline-primary btn-sm rounded-pill px-4 shadow-sm">Open Chat</a>
+              
+              <!-- Dropdown for Edit / Delete -->
+              <div class="dropdown">
+                <button class="btn btn-light btn-sm rounded-circle shadow-sm px-2 text-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-3">
+                  <li>
+                    <button class="dropdown-item small" data-id="{{ s.id }}" data-title="{{ s.title }}" onclick="editTitle(this.getAttribute('data-id'), this.getAttribute('data-title'))">
+                      <i class="bi bi-pencil-square text-primary me-2"></i> Rename
+                    </button>
+                  </li>
+                  <li>
+                    <form action="/chat/{{ s.id }}/delete" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this chat history?');">
+                      <button type="submit" class="dropdown-item small text-danger">
+                        <i class="bi bi-trash-fill me-2"></i> Delete
+                      </button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="col-12 text-center py-5">
+        <i class="bi bi-inbox text-muted mb-3" style="font-size: 3rem;"></i>
+        <h5 class="text-muted">No consultations yet</h5>
+        <a href="/new_chat" class="btn btn-primary mt-3">Start your first consultation</a>
+      </div>
+    {% endfor %}
+  </div>
 
 </div>
+
+<!-- Hidden Form to submit title edits -->
+<form id="editTitleForm" method="POST" style="display: none;">
+  <input type="hidden" name="title" id="editTitleInput">
+</form>
+
+<script>
+  function editTitle(sessionId, currentTitle) {
+    const newTitle = prompt("Enter a new title for this consultation:", currentTitle);
+    if (newTitle !== null && newTitle.trim() !== "" && newTitle !== currentTitle) {
+      const form = document.getElementById('editTitleForm');
+      form.action = "/chat/" + sessionId + "/edit_title";
+      document.getElementById('editTitleInput').value = newTitle;
+      form.submit();
+    }
+  }
+</script>
 
 {% endblock %}

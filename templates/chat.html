@@ -1,58 +1,124 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="d-flex">
+<div class="d-flex" style="height: calc(100vh - 70px);">
 
   <!-- SIDEBAR -->
-  <div class="sidebar p-3" style="width:250px;">
-    <a href="/new_chat" class="btn btn-primary w-100 mb-3">+ New</a>
-
-    {% for s in sessions %}
-      <a href="/chat/{{ s.id }}" class="d-block p-2 border rounded mb-2">
-        {{ s.title or "Consultation" }}
-      </a>
-    {% endfor %}
+  <div class="sidebar p-3 d-none d-md-block" style="width:280px;">
+    <a href="/new_chat" class="btn btn-primary w-100 mb-4 rounded-pill shadow-sm"><i class="bi bi-plus-circle-fill"></i> New Consultation</a>
+    <h6 class="text-muted fw-bold mb-3 small">RECENT SESSIONS</h6>
+    <div style="overflow-y: auto; max-height: calc(100vh - 180px);">
+      {% for s in sessions %}
+        <div class="d-flex align-items-center mb-2 {% if s.id == current_session %}bg-light border-start border-primary border-4{% endif %} rounded">
+          <a href="/chat/{{ s.id }}" class="flex-grow-1 p-2 text-decoration-none {% if s.id == current_session %}text-primary fw-bold{% else %}text-secondary{% endif %}" style="font-size: 0.9rem;">
+            <div class="text-truncate">{{ s.title or "Consultation" }}</div>
+          </a>
+          <button class="btn btn-link text-secondary p-1" data-id="{{ s.id }}" data-title="{{ s.title }}" onclick="editTitleSidebar(this.getAttribute('data-id'), this.getAttribute('data-title'))"><i class="bi bi-pencil" style="font-size: 0.75rem;"></i></button>
+          <form action="/chat/{{ s.id }}/delete" method="POST" class="m-0 p-0" onsubmit="return confirm('Delete this chat?');">
+            <button type="submit" class="btn btn-link text-danger p-1"><i class="bi bi-trash" style="font-size: 0.75rem;"></i></button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
   </div>
 
   <!-- MAIN -->
-  <div class="flex-grow-1 p-4">
+  <div class="flex-grow-1 p-4 d-flex flex-column" style="background: var(--bg-color);">
 
-    <div class="chat-box mb-3">
+    <div class="d-md-none mb-3">
+      <a href="/history" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to History</a>
+    </div>
+
+    <!-- CHAT BOX -->
+    <div class="chat-box flex-grow-1 mb-3 bg-white shadow-sm rounded-4 p-4 border overflow-auto" id="chatContainer">
 
       {% for msg in messages %}
 
         {% if msg.role == "user" %}
-          <div class="text-end mb-2">
-            <span class="badge bg-primary p-2">{{ msg.content }}</span>
+          <div class="text-end mb-4">
+            <div class="user-bubble shadow-sm">{{ msg.content }}</div>
           </div>
 
         {% else %}
-          <div class="card ai-card p-3 mb-3">
+          <div class="card ai-card p-4 mb-4 shadow rounded-4 border-0">
 
-            <h5>Medical Guidance</h5>
-            <pre>{{ msg.content }}</pre>
+            <div class="d-flex align-items-center mb-3">
+               <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow" style="width: 35px; height: 35px;"><i class="bi bi-robot"></i></div>
+               <h5 class="fw-bold mb-0 text-primary" style="font-family: 'Outfit';">AI Medical Analysis</h5>
+            </div>
 
-            <!-- CONFIDENCE -->
-            <div class="mt-3">
-              <label>Confidence</label>
-              <div class="progress">
-                <div class="progress-bar bg-success"
-                     style="width: {{ evaluation.confidence * 100 }}%">
+            <!-- MEDICAL GUIDANCE -->
+            {% if msg.data.medical_guidance %}
+            <div class="mb-4">
+               <h6 class="fw-bold text-dark"><i class="bi bi-clipboard2-pulse text-primary"></i> Medical Guidance</h6>
+               <div class="text-secondary small">{{ msg.data.medical_guidance | replace('\n', '<br>') | safe }}</div>
+            </div>
+            {% endif %}
+
+            <!-- SYMPTOM EXPLANATION -->
+            {% if msg.data.symptom_explanation %}
+            <div class="mb-4">
+               <h6 class="fw-bold text-dark"><i class="bi bi-search text-primary"></i> Possible Symptom Explanation</h6>
+               <div class="text-secondary small">{{ msg.data.symptom_explanation | replace('\n', '<br>') | safe }}</div>
+            </div>
+            {% endif %}
+
+            <!-- PRECAUTIONS -->
+            {% if msg.data.precautions %}
+            <div class="mb-4">
+               <h6 class="fw-bold text-dark"><i class="bi bi-exclamation-triangle text-warning"></i> Precautions / Recommendations</h6>
+               <div class="text-secondary small">{{ msg.data.precautions | replace('\n', '<br>') | safe }}</div>
+            </div>
+            {% endif %}
+            
+            <!-- CLINICAL REASONING -->
+            {% if msg.data.clinical_reasoning %}
+            <div class="mb-4 bg-light p-3 rounded-3 border-start border-3 border-info">
+               <h6 class="fw-bold text-dark mb-1"><i class="bi bi-lightbulb text-info"></i> Clinical Reasoning</h6>
+               <div class="text-secondary small" style="font-size: 0.85rem;">{{ msg.data.clinical_reasoning | replace('\n', '<br>') | safe }}</div>
+            </div>
+            {% endif %}
+
+            <!-- METADATA (CONFIDENCE & SOURCES) -->
+            {% if msg.data.evaluation %}
+            <hr class="text-secondary opacity-25">
+            <div class="row g-3">
+              <!-- CONFIDENCE -->
+              <div class="col-md-6">
+                <label class="small fw-bold text-muted mb-1">AI Confidence Score</label>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height: 8px;">
+                    <div class="progress-bar {% if msg.data.evaluation.get('confidence', 0) > 0.7 %}bg-success{% elif msg.data.evaluation.get('confidence', 0) > 0.4 %}bg-warning{% else %}bg-danger{% endif %}"
+                         style="width: {{ msg.data.evaluation.get('confidence', 0) * 100 }}%">
+                    </div>
+                  </div>
+                  <span class="small fw-bold">{{ (msg.data.evaluation.get('confidence', 0) * 100) | int }}%</span>
+                </div>
+              </div>
+
+              <!-- SOURCES -->
+              <div class="col-md-6">
+                <label class="small fw-bold text-muted mb-1">Retrieved Sources</label>
+                <div class="d-flex flex-wrap gap-2">
+                  {% for s in msg.data.sources %}
+                    <span class="badge border bg-light text-secondary rounded-pill fw-normal">
+                      <i class="bi bi-journal-text text-primary"></i> 
+                      {{ s.type|capitalize }} ({{ (s.score * 100)|int }}%)
+                    </span>
+                  {% endfor %}
+                  {% if not msg.data.sources %}
+                    <span class="text-muted small">No external sources used.</span>
+                  {% endif %}
                 </div>
               </div>
             </div>
-
-            <!-- SOURCES -->
-            <div class="mt-3">
-              <h6>Sources</h6>
-              {% for s in sources %}
-                <p>{{ s.type }} | Score: {{ s.score }}</p>
-              {% endfor %}
-            </div>
+            {% endif %}
 
             <!-- DISCLAIMER -->
-            <div class="text-danger mt-2">
-              ⚠ Not a medical diagnosis.
+            <div class="mt-4 text-center">
+              <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill fw-normal" style="font-size: 0.75rem;">
+                <i class="bi bi-exclamation-circle-fill"></i> <b>Disclaimer:</b> This AI is not a substitute for professional medical advice, diagnosis, or treatment.
+              </span>
             </div>
 
           </div>
@@ -61,24 +127,51 @@
       {% endfor %}
 
       <!-- LOADING -->
-      <div id="loading" style="display:none;">
-        <div class="text-center text-muted">
-          🤖 AI analyzing...
+      <div id="loading" style="display:none;" class="mb-4">
+        <div class="card ai-card p-3 shadow-sm rounded-4 border-0 d-inline-block">
+          <div class="d-flex align-items-center text-primary fw-bold">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            AI is analyzing demographics, symptoms, and clinical data...
+          </div>
         </div>
       </div>
 
     </div>
 
     <!-- INPUT -->
-    <form method="POST" onsubmit="document.getElementById('loading').style.display='block';">
-      <div class="input-group">
-        <input name="question" class="form-control" placeholder="Ask medical question...">
-        <button class="btn btn-primary">Send</button>
-      </div>
-    </form>
+    <div class="mt-auto">
+      <form method="POST" onsubmit="document.getElementById('loading').style.display='block'; scrollToBottom();">
+        <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border bg-white p-1">
+          <input name="question" class="form-control border-0 shadow-none ps-4 bg-transparent" placeholder="Describe your symptoms or ask a medical question..." required>
+          <button class="btn btn-primary rounded-pill px-4" type="submit"><i class="bi bi-send-fill text-white"></i> Send</button>
+        </div>
+      </form>
+    </div>
 
   </div>
 
 </div>
+
+<form id="editTitleForm" method="POST" style="display: none;">
+  <input type="hidden" name="title" id="editTitleInput">
+</form>
+
+<script>
+  function scrollToBottom() {
+    var chatBox = document.getElementById("chatContainer");
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+  window.onload = scrollToBottom;
+
+  function editTitleSidebar(sessionId, currentTitle) {
+    const newTitle = prompt("Enter a new title for this consultation:", currentTitle || "");
+    if (newTitle !== null && newTitle.trim() !== "" && newTitle !== currentTitle) {
+      const form = document.getElementById('editTitleForm');
+      form.action = "/chat/" + sessionId + "/edit_title";
+      document.getElementById('editTitleInput').value = newTitle;
+      form.submit();
+    }
+  }
+</script>
 
 {% endblock %}
